@@ -4,7 +4,17 @@ const fs = require('fs');
 module.exports = {
     data: new Discord.SlashCommandBuilder()
         .setName('포인트')
-        .setDescription('보유 포인트를 확인하실 수 있어요'),
+        .setDescription('포인트 관련 명령어에요.')
+        .addSubcommand(subcommand =>
+            subcommand.setName('보유')
+                .setDescription('보유 중인 포인트를 확인하실 수 있어요.'))
+        .addSubcommand(subcommand =>
+            subcommand.setName('기부')
+                .setDescription('포인트를 다른 분께 기부하실 수 있어요.')
+                .addUserOption(option => option.setName('대상')
+                    .setDescription('기부하실 대상을 선택해주세요.').setRequired(true))
+                .addIntegerOption(option => option.setName('포인트')
+                    .setDescription('기부하실 포인트를 입력해주세요.').setRequired(true))),
     /**
      * 
      * @param {Discord.Client} client 
@@ -16,18 +26,49 @@ module.exports = {
 
         const file = fs.readFileSync('./data/users.json', 'utf-8');
         const users = JSON.parse(file);
-        let points = 0;
-        
-        if (users[user.id] == undefined) {
-            users[user.id] = {name: user.username, points: 0, attendance: "0", attendance_count: 0};
-            fs.writeFileSync('./data/users.json', JSON.stringify(users));
-        } else {
-            points = users[user.id].points;
-        }
-        embed.setTitle(`${user.username}님의 포인트`);
-        embed.setDescription(`${users[user.id].points}포인트 보유 중`);
-        embed.setColor(0x1FF0B2);
 
-        await interaction.reply({embeds: [embed]});
+        if (users[user.id] == undefined) {
+            users[user.id] = { name: user.username, points: 0, attendance: "0", attendance_count: 0 };
+        }
+
+        // 기부
+        switch (interaction.options.getSubcommand()) {
+            case '보유':
+                let points = 0;
+                points = users[user.id].points;
+                embed.setTitle(`${user.username}님의 포인트`);
+                embed.setDescription(`${users[user.id].points}포인트 보유 중`);
+                embed.setColor(0x1FF0B2);
+                break;
+            case '기부':
+                const target = interaction.options.getUser('대상');
+                const donation = interaction.options.getInteger('포인트');
+
+                embed.setTitle('기부가 불가해요!');
+                embed.setColor(0xFF0000);
+
+                if (users[user.id].points == 0 || users[user.id].points < donation) {
+                    embed.setDescription(`${user.username}님이 보유하신 포인트가 기부하실 포인트보다 부족해요!`);
+                } else {
+                    if (users[target.id] == undefined) {
+                        users[target.id] = { name: target.username, points: donation, attendance: "0", attendance_count: 0 };
+                        users[user.id].points -= donation;
+                    } else {
+                        users[target.id].points += donation;
+                        users[user.id].points -= donation;
+                    }
+                    embed.setTitle('기부가 완료되었습니다!');
+                    embed.setDescription(`${target.username}님께 ${donation}포인트가 기부되었습니다.`);
+                    embed.addFields({ name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}` });
+                    embed.setColor(0x1FF0B2);
+                }
+
+                users[user.id].name = user.username;
+                users[target.id].name = target.username;
+                break;
+        }
+
+        fs.writeFileSync('./data/users.json', JSON.stringify(users));
+        await interaction.reply({ embeds: [embed] });
     }
 }
