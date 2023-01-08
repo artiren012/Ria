@@ -10,7 +10,7 @@ module.exports = {
                 .setDescription('일일 출석체크를 진행해요.'))
         .addSubcommand(subcommand =>
             subcommand.setName('랭킹')
-                .setDescription('서버 출석 순위를 10위까지 확인하실 수 있어요.')),
+                .setDescription('서버 출석 순위를 현재 순위와 10위까지 확인하실 수 있어요.')),
     /**
      * 
      * @param {Discord.Client} client 
@@ -56,7 +56,7 @@ module.exports = {
                     if (users[member.user.id] == undefined) {
                         users[member.user.id] = { name: member.user.username, points: 0, attendance: "0", attendance_count: 0 };
                     }
-                    serverUserList.push({ username: member.displayName, attendance_count: users[member.user.id].attendance_count });
+                    serverUserList.push({ username: member.user.username, attendance_count: users[member.user.id].attendance_count });
                 });
 
                 serverUserList.sort((a, b) => {
@@ -70,6 +70,12 @@ module.exports = {
                     embed.addFields({ name: `${i + 1}위: ${serverUserList[i].username}`, 
                         value: `${serverUserList[i].attendance_count}회`, inline: false });
                 }
+
+                const userRank = serverUserList.findIndex(element => {
+                    return element.username === user.username;
+                });
+                embed.setDescription(`${user.username}님의 순위: ${userRank + 1}위`);
+
                 break;
         }
 

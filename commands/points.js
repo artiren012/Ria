@@ -17,7 +17,7 @@ module.exports = {
                     .setDescription('기부하실 포인트를 입력해주세요.').setRequired(true)))
         .addSubcommand(subcommand =>
             subcommand.setName('랭킹')
-                .setDescription('서버 포인트 랭킹을 10위 까지 확인하실 수 있어요.')),
+                .setDescription('서버 포인트 랭킹을 현재 순위와 10위 까지 확인하실 수 있어요.')),
     /**
      * 
      * @param {Discord.Client} client 
@@ -80,7 +80,7 @@ module.exports = {
                     if (users[member.user.id] == undefined) {
                         users[member.user.id] = { name: member.user.username, points: 0, attendance: "0", attendance_count: 0 };
                     }
-                    serverUserList.push({ username: member.displayName, points: users[member.user.id].points });
+                    serverUserList.push({ username: member.user.username, points: users[member.user.id].points });
                 });
 
                 serverUserList.sort((a, b) => {
@@ -94,6 +94,11 @@ module.exports = {
                     embed.addFields({ name: `${i + 1}위: ${serverUserList[i].username}`, 
                         value: `${serverUserList[i].points}포인트`, inline: false });
                 }
+                
+                const userRank = serverUserList.findIndex(element => {
+                    return element.username === user.username;
+                });
+                embed.setDescription(`${user.username}님의 순위: ${userRank + 1}위`);
                 embed.setColor(0x1FF0B2);
                 break;
         }
