@@ -125,9 +125,22 @@ module.exports = {
                     break;
                 case '파괴':
                     if (ephemeral) break;
-                    embed.setTitle('앗, 이런!');
-                    embed.setDescription('아직 준비중인 기능이에요.');
-                    ephemeral = true;
+                    if (items[itemIndex].ownerID == user.id) {
+                        const refund = items[itemIndex].level + ((items[itemIndex].rank - 1) * 10);
+                        users[user.id].points += refund;
+                        items.splice(itemIndex, 1);
+                        embed.setTitle(`아이템 파괴 완료`);
+                        embed.setDescription(`${itemName}이(가) 파괴되었습니다.`);
+                        embed.addFields([
+                            { name: '환급된 포인트', value: `${refund}포인트` },
+                            { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
+                        ]);
+                        embed.setColor(0x1FF0B2);
+                    } else {
+                        embed.setTitle(`${itemName} 파괴 불가!`);
+                        embed.setDescription('등록된 아이템 중 소유하지 않으신 아이템은 파괴할 수 없어요.');
+                        ephemeral = true;
+                    }
                     break;
                 case '각성':
                     if (ephemeral) break;
