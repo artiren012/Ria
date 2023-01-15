@@ -8,10 +8,12 @@ module.exports = {
         .setDescription('아이템 메뉴')
         .addSubcommand(subcommand =>
             subcommand.setName('강화')
-                .setDescription('보유 중이신 아이템을 강화해요. 강화에는 1포인트가 소모돼요.')
+                .setDescription('보유 중이신 아이템을 강화해요. 1레벨 강화에 1포인트가 소모돼요.')
                 .addStringOption(option => option.setName('이름')
                     .setDescription('강화하실 아이템 이름를 입력해주세요. 없는 아이템일 경우 새로 생성돼요.')
-                    .setRequired(true)))
+                    .setRequired(true))
+                .addIntegerOption(option => option.setName('포인트')
+                    .setDescription('강화에 사용할 포인트를 입력해주세요. 입력하신 포인트만큼 일괄적으로 강화해요.')))
         .addSubcommand(subcommand =>
             subcommand.setName('파괴')
                 .setDescription('입력하신 아이템을 파괴해요. 파괴할 아이템의 등급과 이름에 따라 포인트가 환급돼요.')
@@ -34,7 +36,7 @@ module.exports = {
                     .setDescription('파괴하실 아이템 이름을 입력해주세요.')
                     .setRequired(true))
                 .addIntegerOption(option => option.setName('금액')
-                    .setDescription('아이템을 판매할 금액을 입력해주세요.')
+                    .setDescription('아이템을 판매할 금액을 입력해주세요. 금액이 -1인 경우 판매 등록이 취소돼요.')
                     .setRequired(true)))
         .addSubcommand(subcommand =>
             subcommand.setName('구매')
@@ -90,33 +92,65 @@ module.exports = {
 
             switch (subcommand) {
                 case '강화':
+                    let levelUp = 1;
+                    let currentRank = 1;
+                    let currentLevel = 0;
+                    if (items[itemIndex] != undefined) { 
+                        currentRank = items[itemIndex].rank; 
+                        currentLevel = items[itemIndex].level;
+                    }
+                    if (interaction.options.getInteger('포인트') != undefined) { 
+                        levelUp = interaction.options.getInteger('포인트'); 
+                        if (levelUp > users[user.id].points) {
+                            embed.setTitle('아이템을 강화할 수 없어요!');
+                            embed.setDescription(`${user.username}님이 보유하신 포인트가 강화에 사용하실 포인트보다 부족해요!`);
+                            embed.addFields({name: `${user.username}님의 포인트`, value: `${users[user.id].points}포인트 보유 중`});
+                            ephemeral = true;
+                            break;
+                        } else if (levelUp > rankUp[currentRank - 1]) {
+                            embed.setTitle('아이템을 강화할 수 없어요!');
+                            embed.setDescription(`${rankUp[currentRank - 1]}레벨 이상 강화는 각성을 통해 등급을 먼저 올려주셔야 해요.`);
+                            if (currentLevel != 0) { 
+                                embed.addFields({name: `${itemName}의 현재 레벨`, value: `Lv. ${currentLevel}`});
+                            }
+                            ephemeral = true;
+                            break;
+                        }
+                    }
+
                     if (itemIndex == -1) {
                         items.push({
                             name: itemName,
                             rank: 1,
-                            level: 1,
+                            level: levelUp,
                             ownerID: user.id,
                             selling: false,
                             price: 0
                         });
-                        users[user.id].points--;
+                        users[user.id].points -= levelUp;
                         embed.setTitle(`${itemName} 강화 완료!`);
                         embed.addFields([
-                            { name: '레벨', value: `1 (+1)` },
+                            { name: '레벨', value: `Lv. ${levelUp} (+${levelUp})` },
                             { name: '등급', value: `1성` },
                             { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
                         ]);
                         embed.setColor(0x1FF0B2);
                     } else if (items[itemIndex].ownerID == user.id) {
-                        items[itemIndex].level++;
-                        users[user.id].points--;
-                        embed.setTitle(`${itemName} 강화 완료!`);
-                        embed.addFields([
-                            { name: '레벨', value: `${items[itemIndex].level} (+1)` },
-                            { name: '등급', value: `${items[itemIndex].rank}성` },
-                            { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
-                        ]);
-                        embed.setColor(0x1FF0B2);
+                        if (items[itemIndex].level == rankUp[items[itemIndex].rank - 1]) {
+                            embed.setTitle(`${itemName} 강화 불가!`);
+                            embed.setDescription(`${itemName}을 더이상 강화할 수 없어요! 각성을 통해 등급을 올려주세요.`);
+                            ephemeral = true;
+                        } else {
+                            items[itemIndex].level += levelUp;
+                            users[user.id].points -= levelUp;
+                            embed.setTitle(`${itemName} 강화 완료!`);
+                            embed.addFields([
+                                { name: '레벨', value: `Lv. ${items[itemIndex].level} (+${levelUp})` },
+                                { name: '등급', value: `${items[itemIndex].rank}성` },
+                                { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
+                            ]);
+                            embed.setColor(0x1FF0B2);
+                        }
                     } else {
                         embed.setTitle(`${itemName} 강화 불가!`);
                         embed.setDescription('등록된 아이템 중 소유하지 않으신 아이템은 강화할 수 없어요.');
@@ -156,6 +190,12 @@ module.exports = {
                         ephemeral = true;
                     } else {
                         const price = interaction.options.getInteger('금액');
+                        if (price == -1) {
+                            items[itemIndex].selling = false;
+                            embed.setTitle(`${itemName} 판매 등록 취소!`);
+                            embed.setDescription(`${itemName}의 판매 등록이 취소되었습니다.`);
+                            break;
+                        }
                         items[itemIndex].price = price;
                         items[itemIndex].selling = true;
                         embed.setTitle(`${itemName} 판매 등록 완료!`);
@@ -201,11 +241,11 @@ module.exports = {
             embed.setTitle(`${user.username}님의 보유 아이템 목록`);
             for (index in items) {
                 if (items[index].ownerID == user.id) {
-                    let desc = `${items[index].rank}성 / ${items[index].level}레벨`;
+                    let desc = `${items[index].rank}성 / Lv. ${items[index].level}`;
                     if (items[index].selling) {
                         desc += ` / 판매 중 (${items[index].price}포인트)`;
                     }
-                    embed.addFields({name: items[index].name, value: desc, inline: true});
+                    embed.addFields({ name: items[index].name, value: desc, inline: true });
                 }
             }
         }
