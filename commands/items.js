@@ -232,9 +232,19 @@ module.exports = {
                     break;
                 case '정보':
                     if (ephemeral) break;
-                    embed.setTitle('앗, 이런!');
-                    embed.setDescription('아직 준비중인 기능이에요.');
-                    ephemeral = true;
+                    embed.setTitle(items[itemIndex].name);
+                    if (itemOwner == user.id) { embed.setDescription('아이템 보유 중'); }
+                    else { embed.setDescription('아이템 미보유'); }
+                    embed.addFields([
+                        {name: '레벨', value: `Lv. ${items[itemIndex].level}`, inline: true},
+                        {name: '등급', value: `${items[itemIndex].rank}성`, inline: true}
+                    ]);
+                    if (items[itemIndex].selling) {
+                        embed.addFields({name: '판매 여부', value: `판매 중 (${items[itemIndex].price}포인트)`, inline: true});
+                    } else {
+                        embed.addFields({name: '판매 여부', value: `미판매`, inline: true});
+                    }
+                    embed.setColor(0x1FF0B2);
                     break;
             }
         } else if (subcommand == '보유') {
