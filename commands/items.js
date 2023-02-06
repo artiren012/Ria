@@ -95,23 +95,23 @@ module.exports = {
                     let levelUp = 1;
                     let currentRank = 1;
                     let currentLevel = 0;
-                    if (items[itemIndex] != undefined) { 
-                        currentRank = items[itemIndex].rank; 
+                    if (items[itemIndex] != undefined) {
+                        currentRank = items[itemIndex].rank;
                         currentLevel = items[itemIndex].level;
                     }
-                    if (interaction.options.getInteger('포인트') != undefined) { 
-                        levelUp = interaction.options.getInteger('포인트'); 
+                    if (interaction.options.getInteger('포인트') != undefined) {
+                        levelUp = interaction.options.getInteger('포인트');
                         if (levelUp > users[user.id].points) {
                             embed.setTitle('아이템을 강화할 수 없어요!');
                             embed.setDescription(`${user.username}님이 보유하신 포인트가 강화에 사용하실 포인트보다 부족해요!`);
-                            embed.addFields({name: `${user.username}님의 포인트`, value: `${users[user.id].points}포인트 보유 중`});
+                            embed.addFields({ name: `${user.username}님의 포인트`, value: `${users[user.id].points}포인트 보유 중` });
                             ephemeral = true;
                             break;
                         } else if (levelUp > rankUp[currentRank - 1]) {
                             embed.setTitle('아이템을 강화할 수 없어요!');
                             embed.setDescription(`${rankUp[currentRank - 1]}레벨 이상 강화는 각성을 통해 등급을 먼저 올려주셔야 해요.`);
-                            if (currentLevel != 0) { 
-                                embed.addFields({name: `${itemName}의 현재 레벨`, value: `Lv. ${currentLevel}`});
+                            if (currentLevel != 0) {
+                                embed.addFields({ name: `${itemName}의 현재 레벨`, value: `Lv. ${currentLevel}` });
                             }
                             ephemeral = true;
                             break;
@@ -178,9 +178,41 @@ module.exports = {
                     break;
                 case '각성':
                     if (ephemeral) break;
-                    embed.setTitle('앗, 이런!');
-                    embed.setDescription('아직 준비중인 기능이에요.');
-                    ephemeral = true;
+                    if (items[itemIndex].ownerID == user.id) {
+                        if (rankUp[items[itemIndex].rank - 1] == items[itemIndex].level) {
+                            if (users[user.id].points >= rankUp[items[itemIndex].rank - 1]) {
+                                users[user.id].points -= rankUp[items[itemIndex].rank - 1];
+                                items[itemIndex].rank++;
+                                embed.setTitle(`${itemName} 각성 완료!`);
+                                embed.addFields([
+                                    { name: '레벨', value: `Lv. ${items[itemIndex].level}` },
+                                    { name: '등급', value: `${items[itemIndex].rank}성 (+1)` },
+                                    { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
+                                ]);
+                                embed.setColor(0x1FF0B2);
+                            } else {
+                                embed.setTitle(`${itemName} 각성 불가!`);
+                                embed.setDescription(`보유하신 포인트가 각성에 필요한 포인트보다 부족해요!`);
+                                embed.addFields([
+                                    { name: '등급', value: `${items[itemIndex].rank}성` },
+                                    { name: '다음 등급 각성에 필요한 포인트', value: `${rankUp[items[itemIndex].rank - 1]}포인트` },
+                                    { name: `${user.username}님의 잔여 포인트`, value: `${users[user.id].points}포인트` }
+                                ]);
+                                ephemeral = true;
+                            }
+                        } else {
+                            embed.setTitle(`${itemName} 각성 불가!`);
+                                embed.setDescription('아이템의 레벨이 각성 가능한 레벨이 아니에요!');
+                                embed.addFields([
+                                    { name: '현재 레벨', value: `Lv. ${items[itemIndex].level}` },
+                                    { name: '다음 등급 각성이 가능한 레벨', value: `Lv. ${rankUp[items[itemIndex].rank - 1]}` }                                ]);
+                                ephemeral = true;
+                        }
+                    } else {
+                        embed.setTitle(`${itemName} 각성 불가!`);
+                        embed.setDescription('등록된 아이템 중 소유하지 않으신 아이템은 각성할 수 없어요.');
+                        ephemeral = true;
+                    }
                     break;
                 case '판매':
                     if (ephemeral) break;
@@ -236,13 +268,13 @@ module.exports = {
                     if (itemOwner == user.id) { embed.setDescription('아이템 보유 중'); }
                     else { embed.setDescription('아이템 미보유'); }
                     embed.addFields([
-                        {name: '레벨', value: `Lv. ${items[itemIndex].level}`, inline: true},
-                        {name: '등급', value: `${items[itemIndex].rank}성`, inline: true}
+                        { name: '레벨', value: `Lv. ${items[itemIndex].level}`, inline: true },
+                        { name: '등급', value: `${items[itemIndex].rank}성`, inline: true }
                     ]);
                     if (items[itemIndex].selling) {
-                        embed.addFields({name: '판매 여부', value: `판매 중 (${items[itemIndex].price}포인트)`, inline: true});
+                        embed.addFields({ name: '판매 여부', value: `판매 중 (${items[itemIndex].price}포인트)`, inline: true });
                     } else {
-                        embed.addFields({name: '판매 여부', value: `미판매`, inline: true});
+                        embed.addFields({ name: '판매 여부', value: `미판매`, inline: true });
                     }
                     embed.setColor(0x1FF0B2);
                     break;
