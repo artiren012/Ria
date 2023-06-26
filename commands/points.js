@@ -47,14 +47,14 @@ module.exports = {
                 const target = interaction.options.getUser('대상');
                 const donation = interaction.options.getInteger('포인트');
 
-                embed.setTitle('송금이 불가해요!');
+                embed.setTitle('포인트를 보낼 수 없어요!');
                 embed.setColor(0xFF0000);
 
                 if (target.bot) {
-                    embed.setDescription('봇에게 포인트를 송금하실 수 없어요!');
+                    embed.setDescription('봇에게 포인트를 보내실 수 없어요!');
                     ephemeral = true;
                 } else if (users[user.id].points == 0 || users[user.id].points < donation) {
-                    embed.setDescription(`${user.username}님이 보유하신 포인트가 송금하실 포인트보다 부족해요!`);
+                    embed.setDescription(`${user.username}님이 보유하신 포인트가 보내실 포인트보다 부족해요!`);
                     embed.addFields({name: `${user.username}님의 포인트`, value: `${users[user.id].points}포인트 보유 중`});
                     ephemeral = true;
                 } else {
