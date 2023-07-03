@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('일일 출석체크')
         .addSubcommand(subcommand =>
             subcommand.setName('체크')
-                .setDescription('일일 출석체크를 진행해요.'))
+                .setDescription('일일 출석체크를 진행해요. 출석 시 10~50 포인트 이내의 포인트를 랜덤하게 획득하실 수 있어요.'))
         .addSubcommand(subcommand =>
             subcommand.setName('랭킹')
                 .setDescription('서버 출석 순위를 현재 순위와 10위까지 확인하실 수 있어요.')),
@@ -41,10 +41,11 @@ module.exports = {
                     embed.setDescription(`이미 오늘 출석을 완료하셨어요.\n출석 횟수: ${users[user.id].attendance_count}`);
                     ephemeral = true;
                 } else {
-                    users[user.id].points += 10;
+                    const rand = randint(10, 50);
+                    users[user.id].points += rand;
                     users[user.id].attendance = now;
                     users[user.id].attendance_count += 1;
-                    embed.setDescription(`10포인트가 적립되었어요!\n출석 횟수: ${users[user.id].attendance_count}`);
+                    embed.setDescription(`${rand}포인트가 적립되었어요!\n출석 횟수: ${users[user.id].attendance_count}`);
                 }
                 break;
             case '랭킹':
@@ -83,4 +84,8 @@ module.exports = {
         fs.writeFileSync('./data/users.json', JSON.stringify(users));
         await interaction.reply({ embeds: [embed], ephemeral: ephemeral });
     }
+}
+
+function randint(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
 }
