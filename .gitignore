@@ -127,6 +127,7 @@ dist
 .pnp.*
 
 .DS_Store
-data/
+data/items.json
+data/users.json
 config.json
 .vscode/
